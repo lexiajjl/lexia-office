@@ -4,6 +4,8 @@
  * the floor's paint, down off a roof the map doesn't have, and who's waiting on another floor.
  */
 import { floorPalette } from '../../shared/floors';
+import { despachoDe } from '../../shared/lexia';
+import { dressIdleAgents } from './stations';
 import { store } from '../state';
 import { $, toast } from '../ui/dom';
 import type { Ctx } from './context';
@@ -20,9 +22,25 @@ export function installMaps(ctx: Ctx, core: CoreState, parts: MapsParts) {
   const { holiday } = parts.stage;
   const { inOffice, plan } = parts.worlds;
 
+  /** Lexia: what the floor's oficina.json says, as last put on the office (see shared/lexia.ts). */
+  let dressed = '';
+  function dressFloor() {
+    const f = store.currentFloor();
+    const lexia = f?.lexia;
+    const k = `${f?.id ?? ''}|${JSON.stringify(lexia ?? null)}`;
+    if (k === dressed) return;
+    dressed = k;
+    ctx.office.setDespacho(despachoDe(lexia));
+    ctx.office.setSoloReuniones(!!lexia?.soloReuniones);
+    ctx.office.setChica(lexia?.estilo === 'chica');
+    parts.dog.setSize(lexia?.perroTamano ?? 1);
+    dressIdleAgents(parts.worlds.idleAgents());
+  }
+
   /** Which of the floor palettes the walls are painted in now. */
   let painted = -1;
   function paintFloor() {
+    dressFloor();
     const p = store.currentFloor()?.palette ?? 0;
     if (p === painted) return;
     painted = p;

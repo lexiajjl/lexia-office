@@ -5,6 +5,9 @@ import { AGENT_PROVIDERS, takesEffort, takesModel } from '../../shared/providers
 import { Worktrees, workspaceOf, type WorktreeCleanup, type WorktreeState } from '../worktrees.js';
 import { DESK_BY_ID, STATION_AGENT, deskBuilt } from '../../shared/layout.js';
 import { stationBrief } from '../stations.js';
+import { readLexia } from '../lexia.js';
+import { jefeBrief, type LexiaJefe } from '../../shared/lexia.js';
+import type { StationKind } from '../../shared/layout.js';
 import type { PromptSource } from '../prompts.js';
 import type { GhAs } from '../signins.js';
 import type { ServiceOwner } from '../services.js';
@@ -230,7 +233,11 @@ export class WorkerManager {
     const seat = DESK_BY_ID.get(deskId);
     if (!seat) return 'Unknown desk';
     if (!deskBuilt(seat, this.wing())) return `${seat.label} isn't built yet: expand the back office first`;
-    if (this.deskOccupied(deskId)) return seat.station ? `The ${STATION_AGENT[seat.station].name} is already there` : `That ${seat.beanbag ? 'bean bag' : 'desk'} is taken`;
+    const lexia = readLexia(this.dir);
+    // Lexia: a floor only for meetings has nobody working at its desks or kiosks.
+    if (lexia?.soloReuniones && !seat.room) return 'Esta planta es solo para reuniones: aquí no se contrata a nadie';
+    const jefe = seat.station ? this.jefeAt(seat.station) : undefined;
+    if (this.deskOccupied(deskId)) return seat.station ? `${jefe ? jefe.nombre : `The ${STATION_AGENT[seat.station].name}`} is already there` : `That ${seat.beanbag ? 'bean bag' : 'desk'} is taken`;
     if (kind === 'shell' && seat.station) return 'A board agent is always an agent, not a shell';
     if (seat.station && !prompt?.trim()) return 'Tell the board agent what to do';
     if (!seat.room !== !meeting) return seat.room ? 'Only a meeting seats workers at the meeting table: call one in the meeting room' : 'A meeting seats its workers at the meeting table';
@@ -249,7 +256,7 @@ export class WorkerManager {
     if (full) return full;
     const used = new Set([...this.workers.values()].map((w) => w.info.name.replace(/ 🐚$/, '')));
     const agent = seat.station && STATION_AGENT[seat.station];
-    const name = agent ? agent.name : (NAMES.find((n) => !used.has(n)) ?? `Worker ${this.workers.size + 1}`);
+    const name = jefe ? jefe.nombre : agent ? agent.name : (NAMES.find((n) => !used.has(n)) ?? `Worker ${this.workers.size + 1}`);
     const id = randomBytes(6).toString('hex');
     let wt: WorkerInfo['worktree'] = meeting?.worktree;
     let others: WorkerRepo[] | undefined;
@@ -274,7 +281,7 @@ export class WorkerManager {
       effort: takesEffort(selectedProvider) ? effort : undefined,
       deskId,
       name: kind === 'shell' ? `${name} 🐚` : name,
-      color: kind === 'shell' ? '#8d99ae' : agent ? agent.color : COLORS[Math.floor(Math.random() * COLORS.length)],
+      color: kind === 'shell' ? '#8d99ae' : agent ? (jefe?.color ?? agent.color) : COLORS[Math.floor(Math.random() * COLORS.length)],
       status: 'starting',
       acked: true,
       createdBy: by,
@@ -295,9 +302,21 @@ export class WorkerManager {
     this.workers.set(id, w);
     if (info.prompt) this.tasks.notePrompt(w, info.prompt);
     // A board agent is told what it's there for ahead of its first request (which is what shows).
-    this.launch(w, seat.station && info.prompt ? `${stationBrief(seat.station, this.prompts)}\n\n${info.prompt}` : info.prompt, undefined);
+    this.launch(w, seat.station && info.prompt ? `${this.briefFor(seat.station)}\n\n${info.prompt}` : info.prompt, undefined);
     this.persist();
     return info;
+  }
+
+  /** Lexia: the head of department this floor's oficina.json puts at `kind`'s kiosk, if any. */
+  private jefeAt(kind: StationKind): LexiaJefe | undefined {
+    return readLexia(this.dir)?.jefes?.[kind];
+  }
+
+  /** What the agent at `kind`'s kiosk is told it's there for: the head of department's brief, or the board agent's. */
+  private briefFor(kind: StationKind): string {
+    const lexia = readLexia(this.dir);
+    const jefe = lexia?.jefes?.[kind];
+    return jefe && lexia ? jefeBrief(jefe, lexia) : stationBrief(kind, this.prompts);
   }
 
   /** The workspace of a worker across repositories (see WorkerTrees.makeWorkspace). */
@@ -316,7 +335,7 @@ export class WorkerManager {
     w.info.exitCode = undefined;
     const station = DESK_BY_ID.get(w.info.deskId)?.station;
     // A board agent with no session to carry on starts over, so it needs telling what it's for again.
-    const first = prompt && station && !w.info.sessionId ? `${stationBrief(station, this.prompts)}\n\n${prompt}` : prompt;
+    const first = prompt && station && !w.info.sessionId ? `${this.briefFor(station)}\n\n${prompt}` : prompt;
     if (prompt) {
       w.info.activity = truncate(prompt, 80);
       this.tasks.notePrompt(w, prompt);
@@ -664,7 +683,10 @@ export class WorkerManager {
     const commandPath = isShell ? undefined : configured ? this.agentPath : resolveCommand(command);
     const base = isShell ? (WIN && !process.env.SHELL ? [] : ['-l']) : configured ? [...this.agentArgs] : [];
     // Its provider's command line, and anything it sets for this run (see ProviderAdapter.launch).
-    const plan: LaunchPlan = adapter ? adapter.launch({ h: this.handleOf(w), args: base, prompt, resumeSessionId, station: DESK_BY_ID.get(info.deskId)?.station, cwd, setup: this.setups[adapter.id] }) : { args: base };
+    // Lexia: a head of department at a kiosk is no board agent, so it's launched without a board agent's limits.
+    const kiosk = DESK_BY_ID.get(info.deskId)?.station;
+    const station = kiosk && !this.jefeAt(kiosk) ? kiosk : undefined;
+    const plan: LaunchPlan = adapter ? adapter.launch({ h: this.handleOf(w), args: base, prompt, resumeSessionId, station, cwd, setup: this.setups[adapter.id] }) : { args: base };
     const { args } = plan;
     if (plan.rotateToken) w.hookToken = randomBytes(16).toString('hex');
     const env = childEnv();

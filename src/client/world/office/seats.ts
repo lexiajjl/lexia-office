@@ -7,6 +7,12 @@ import type { Fixture } from './fixture';
 import { PALETTE, box } from './materials';
 import { deskBooks, deskMug, plant } from './props';
 
+/**
+ * Lexia: each desk's and kiosk's collider and what you use it by, so a floor only for meetings can put
+ * them all away (see lexia.ts in this folder).
+ */
+export const SEAT_PARTS = new Map<string, { collider: Collider; it: Interactable }>();
+
 // Where people sit: the seats you use (see SEATING), and the desks, bean bags and board agents' kiosks
 // that workers sit (or stand) at, with the "+" over a free one.
 
@@ -229,11 +235,13 @@ export const desks: Fixture = (site) => {
     site.desks.set(def.id, view);
     const hw = DESK_SIZE.width / 2 - 0.05;
     const hd = DESK_SIZE.depth / 2 - 0.02;
-    site.colliders.push({ minX: def.x - hw, maxX: def.x + hw, minZ: def.z - hd, maxZ: def.z + hd, top: DESK_SIZE.height });
+    const collider: Collider = { minX: def.x - hw, maxX: def.x + hw, minZ: def.z - hd, maxZ: def.z + hd, top: DESK_SIZE.height };
+    site.colliders.push(collider);
     const seat = deskSeat(def, 1.25);
     const it: Interactable = { kind: 'desk', deskId: def.id, x: seat.x, z: seat.z, radius: 1.3 };
     site.interactables.push(it);
     view.group.userData.interact = it;
+    SEAT_PARTS.set(def.id, { collider, it });
   });
   return {};
 };
@@ -285,12 +293,14 @@ export const kiosks: Fixture = (site) => {
     const corners = [-1, 1].flatMap((t) => [-KIOSK.depth / 2, KIOSK.stand + 0.35].map((sz) => deskPoint(def, (t * KIOSK.width) / 2, sz)));
     const xs = corners.map(([x]) => x);
     const zs = corners.map(([, z]) => z);
-    site.colliders.push({ minX: Math.min(...xs), maxX: Math.max(...xs), minZ: FLOOR.minZ, maxZ: Math.max(...zs), top: 1.5, fence: true });
+    const collider: Collider = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: FLOOR.minZ, maxZ: Math.max(...zs), top: 1.5, fence: true };
+    site.colliders.push(collider);
     // Walk up to its front.
     const [fx, fz] = deskPoint(def, 0, -1);
     const it: Interactable = { kind: 'station', deskId: def.id, x: fx, z: fz, radius: 1.3 };
     site.interactables.push(it);
     view.group.userData.interact = it;
+    SEAT_PARTS.set(def.id, { collider, it });
     // The agent, its name tag and the card over its head, up against the wall.
     site.wall('north', def.x, 1.45, 1.4, 2.9);
   }

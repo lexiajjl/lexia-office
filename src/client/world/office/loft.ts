@@ -11,7 +11,7 @@ import { chair, seatable } from './seats';
  * The upstairs office: a loft on posts in the south-east corner, with glass on the two sides that
  * face the desks, reached by stairs along the south wall.
  */
-export function buildLoft(group: THREE.Group, colliders: Collider[], interactables: Interactable[], looks: Looks): THREE.Mesh {
+export function buildLoft(group: THREE.Group, colliders: Collider[], interactables: Interactable[], looks: Looks): { bossScreen: THREE.Mesh; setDespacho: (text: string) => void } {
   const { minX, maxX, minZ, maxZ, y: floorY, height } = LOFT;
   const w = maxX - minX;
   const d = maxZ - minZ;
@@ -99,17 +99,8 @@ export function buildLoft(group: THREE.Group, colliders: Collider[], interactabl
     group.add(mesh(box(run + 0.04, 0.06, sw), woodMat, fromX + (i - 0.5) * run - 0.02, i * rise - 0.03, STAIRS.minZ + sw / 2, false));
     colliders.push({ minX: fromX + (i - 1) * run, maxX: fromX + i * run, minZ: STAIRS.minZ, maxZ: STAIRS.maxZ, top: i * rise });
   }
-  const railZ = STAIRS.minZ + 0.06;
-  const railH = 0.9;
   const inkMat = toon(PALETTE.deskLeg);
-  for (let i = 1; i <= steps; i += 2) {
-    group.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, railH, 6), inkMat, fromX + (i - 0.5) * run, i * rise + railH / 2, railZ, false));
-  }
-  const x0 = fromX + 0.5 * run;
-  const x1 = fromX + (steps - 0.5) * run;
-  const handrail = mesh(box(Math.hypot(x1 - x0, (x1 - x0) * (rise / run)) + 0.1, 0.07, 0.07), woodMat, (x0 + x1) / 2, (rise + floorY) / 2 + railH, railZ, false);
-  handrail.rotation.z = Math.atan2(rise, run);
-  group.add(handrail);
+  // Lexia: no handrail on the stairs (the open side still stops you stepping off, below).
   // You can't step off the side of the stairs, or climb on from it.
   colliders.push({ minX: fromX, maxX: toX, minZ: STAIRS.minZ - 0.1, maxZ: STAIRS.minZ, top: 99 });
 
@@ -126,6 +117,21 @@ export function buildLoft(group: THREE.Group, colliders: Collider[], interactabl
   const screen = mesh(new THREE.PlaneGeometry(0.8, 0.45), new THREE.MeshBasicMaterial({ color: '#4cc9f0' }), 0, 1.18, -0.165, false);
   desk.add(screen);
   desk.add(mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.12, 10), toon('#ffd166'), 0.9, 0.89, 0.15));
+  // Lexia: the office computer, where the GitHub boards open (issues, PRs and the task queue).
+  const pc = new THREE.Group();
+  pc.add(mesh(roundedBox(0.5, 0.03, 0.34, 0.02), toon(PALETTE.ink), 0, 0.845, 0));
+  const lid = mesh(roundedBox(0.5, 0.32, 0.03, 0.02), toon(PALETTE.ink), 0, 1.0, -0.16);
+  lid.rotation.x = -0.25;
+  pc.add(lid);
+  const pcScreen = mesh(new THREE.PlaneGeometry(0.44, 0.27), new THREE.MeshBasicMaterial({ color: '#caffbf' }), 0, 1.0, -0.14, false);
+  pcScreen.rotation.x = -0.25;
+  pc.add(pcScreen);
+  const pcTag = textPlane('📋 Tablones', { bg: '#fffaf3', size: 40 });
+  pcTag.scale.multiplyScalar(0.3);
+  pcTag.position.set(0, 1.25, -0.2);
+  pc.add(pcTag);
+  pc.position.set(-0.85, 0, 0.1);
+  desk.add(pc);
   const plate = textPlane('👑 BOSS', { bg: '#ffd166', size: 48 });
   plate.scale.multiplyScalar(0.55);
   plate.position.set(0, 0.5, -0.55);
@@ -140,6 +146,9 @@ export function buildLoft(group: THREE.Group, colliders: Collider[], interactabl
   screen.userData.interact = bossChair.userData.interact;
   desk.position.set(deskX, floorY, deskZ);
   group.add(desk);
+  const boards: Interactable = { kind: 'bossBoards', x: deskX - 0.85, y: floorY, z: deskZ + 0.9, radius: 1.1 };
+  pc.userData.interact = boards;
+  interactables.push(boards);
   colliders.push({ minX: deskX - 1.3, maxX: deskX + 1.3, minZ: deskZ - 0.6, maxZ: deskZ + 0.6, bottom: floorY, top: floorY + 0.8 });
 
   const couch = new THREE.Group();
@@ -194,27 +203,45 @@ export function buildLoft(group: THREE.Group, colliders: Collider[], interactabl
   lamp.position.set(deskX, roofY - 0.4, cz);
   group.add(lamp);
 
-  // Signs: one on the back wall inside, one over the glass for everyone downstairs.
-  const inside = textPlane('👑 Boss Office', { bg: '#fffaf3', size: 64 });
-  inside.scale.multiplyScalar(0.8);
-  inside.position.set(maxX - 3, floorY + 1.9, maxZ - 0.04);
-  inside.rotation.y = Math.PI;
-  group.add(inside);
-  const outside = textPlane('👑 Boss Office', { bg: '#2b2d42', color: '#fffaf3', size: 64, border: '#fffaf3' });
-  outside.scale.multiplyScalar(1.4);
-  // In front of the roof's trim (minZ - 0.04 to minZ), or the trim hides the sign's lower half.
-  outside.position.set(cx, roofY + 0.2, minZ - 0.07);
-  outside.rotation.y = Math.PI;
-  group.add(outside);
-  return screen;
+  // Signs: one on the back wall inside, one over the glass for everyone downstairs. Lexia: they say
+  // whose office it is, floor by floor (see setDespacho).
+  let signs: THREE.Mesh[] = [];
+  let said = '';
+  const setDespacho = (text: string) => {
+    if (text === said) return;
+    said = text;
+    for (const s of signs) {
+      group.remove(s);
+      s.geometry.dispose();
+      const m = s.material as THREE.MeshBasicMaterial;
+      m.map?.dispose();
+      m.dispose();
+    }
+    const inside = textPlane(`👑 ${text}`, { bg: '#fffaf3', size: 64 });
+    inside.scale.multiplyScalar(0.8);
+    inside.position.set(maxX - 3, floorY + 1.9, maxZ - 0.04);
+    inside.rotation.y = Math.PI;
+    group.add(inside);
+    const outside = textPlane(`👑 ${text}`, { bg: '#2b2d42', color: '#fffaf3', size: 64, border: '#fffaf3' });
+    outside.scale.multiplyScalar(1.4);
+    // In front of the roof's trim (minZ - 0.04 to minZ), or the trim hides the sign's lower half.
+    outside.position.set(cx, roofY + 0.2, minZ - 0.07);
+    outside.rotation.y = Math.PI;
+    group.add(outside);
+    signs = [inside, outside];
+  };
+  setDespacho('Boss Office');
+  return { bossScreen: screen, setDespacho };
 }
 
 declare module '../types' {
   interface OfficeHandles {
     /** The monitor on the boss's desk upstairs, where Minesweeper plays (features/arcade/ui.ts). */
     bossScreen: THREE.Mesh;
+    /** Lexia: what the signs over the boss office say ("Despacho de Laura"). */
+    setDespacho(text: string): void;
   }
 }
 
 /** The loft up the stairs, over the meeting room: the boss's office. */
-export const loft: Fixture<'bossScreen'> = (site) => ({ handle: { bossScreen: buildLoft(site.group, site.colliders, site.interactables, site.looks) } });
+export const loft: Fixture<'bossScreen' | 'setDespacho'> = (site) => ({ handle: buildLoft(site.group, site.colliders, site.interactables, site.looks) });

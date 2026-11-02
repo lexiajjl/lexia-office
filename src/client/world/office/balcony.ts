@@ -8,6 +8,9 @@ import { PALETTE, box, floorTexture, glassPane } from './materials';
 import { floorPlant, plant } from './props';
 import { seatable } from './seats';
 
+/** Lexia: the railings are left out (what stops you walking off the edge is still there). */
+const LEXIA_RAILINGS = false;
+
 // Outside the office's walls: the smoking balcony off the south wall, the posts under the bottom
 // floor's, and the steps from the exit door down to the street.
 
@@ -63,18 +66,21 @@ export function buildBalcony(group: THREE.Group, colliders: Collider[], interact
     const len = Math.hypot(x1 - x0, z1 - z0);
     const alongX = z0 === z1;
     const n = Math.ceil(len / 1.6);
-    for (let i = 0; i <= n; i++) {
-      const t = i / n;
-      parts.add(mesh(box(0.06, railH, 0.06), ink, x0 + (x1 - x0) * t, railH / 2, z0 + (z1 - z0) * t, false));
-    }
-    const rail = mesh(alongX ? box(len + 0.1, 0.07, 0.12) : box(0.12, 0.07, len + 0.1), wood, (x0 + x1) / 2, railH + 0.02, (z0 + z1) / 2);
-    parts.add(rail);
-    for (let i = 0; i < n; i++) {
-      const t = (i + 0.5) / n;
-      const pane = glassPane(len / n - 0.1, railH - 0.2);
-      pane.position.set(x0 + (x1 - x0) * t, (railH - 0.2) / 2 + 0.08, z0 + (z1 - z0) * t);
-      pane.rotation.y = alongX ? 0 : Math.PI / 2;
-      parts.add(pane);
+    // Lexia: no railing to see, only what stops you walking off the edge.
+    if (LEXIA_RAILINGS) {
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        parts.add(mesh(box(0.06, railH, 0.06), ink, x0 + (x1 - x0) * t, railH / 2, z0 + (z1 - z0) * t, false));
+      }
+      const rail = mesh(alongX ? box(len + 0.1, 0.07, 0.12) : box(0.12, 0.07, len + 0.1), wood, (x0 + x1) / 2, railH + 0.02, (z0 + z1) / 2);
+      parts.add(rail);
+      for (let i = 0; i < n; i++) {
+        const t = (i + 0.5) / n;
+        const pane = glassPane(len / n - 0.1, railH - 0.2);
+        pane.position.set(x0 + (x1 - x0) * t, (railH - 0.2) / 2 + 0.08, z0 + (z1 - z0) * t);
+        pane.rotation.y = alongX ? 0 : Math.PI / 2;
+        parts.add(pane);
+      }
     }
     colliders.push({ minX: Math.min(x0, x1) - 0.05, maxX: Math.max(x0, x1) + 0.05, minZ: Math.min(z0, z1) - 0.05, maxZ: Math.max(z0, z1) + 0.05, bottom: -SLAB, top: 99 });
   }
@@ -83,7 +89,8 @@ export function buildBalcony(group: THREE.Group, colliders: Collider[], interact
   const poleH = 2.7;
   const sw = new THREE.Vector3(minX + inset, poleH, maxZ - inset);
   const se = new THREE.Vector3(maxX - inset, poleH, maxZ - inset);
-  for (const p of [sw, se]) parts.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, poleH - railH, 6), ink, p.x, (poleH + railH) / 2, p.z, false));
+  // The lamp poles stand on the deck now there's no railing to stand them on.
+  for (const p of [sw, se]) parts.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, poleH, 6), ink, p.x, poleH / 2, p.z, false));
   const bulbs = ['#ffd166', '#ff8fa3', '#8ecae6', '#caffbf'].map((c): [string, THREE.Material] => [c, bulb(night, c, 0.4)]);
   parts.add(stringLights(sw, se, 0.35, bulbs, night));
   parts.add(stringLights(sw, new THREE.Vector3(-6.5, 3.5, minZ + 0.02), 0.3, bulbs, night));
@@ -219,8 +226,12 @@ export function buildExitStairs(group: THREE.Group, colliders: Collider[]) {
   const ink = toon(PALETTE.deskLeg);
   const railX = minX + 0.06;
   const railH = 1.0;
-  const post = (x: number, y: number, z: number) => group.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, railH, 6), ink, x, y + railH / 2, z, false));
+  // Lexia: no railing to see, only what stops you stepping off (the colliders below).
+  const post = (x: number, y: number, z: number) => {
+    if (LEXIA_RAILINGS) group.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, railH, 6), ink, x, y + railH / 2, z, false));
+  };
   const rail = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => {
+    if (!LEXIA_RAILINGS) return;
     const len = Math.hypot(x1 - x0, y1 - y0, z1 - z0);
     const r = mesh(new THREE.CylinderGeometry(0.035, 0.035, len, 6), ink, (x0 + x1) / 2, (y0 + y1) / 2 + railH, (z0 + z1) / 2, false);
     r.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x1 - x0, y1 - y0, z1 - z0).normalize());

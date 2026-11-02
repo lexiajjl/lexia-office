@@ -1,0 +1,53 @@
+{
+  "socio": "Jaime",
+  "perro": {
+    "tamano": 2.6
+  },
+  "jefes": {
+    "izquierda": {
+      "nombre": "Rocky",
+      "departamento": "Ventas y Prospección",
+      "cargo": "Jefe de Ventas y Prospección",
+      "ficha": "departamentos/ventas/JEFE.md",
+      "mesas": [
+        "desk-1",
+        "desk-2",
+        "desk-3",
+        "desk-4"
+      ],
+      "color": "#e63946",
+      "lema": "Clientes nuevos, llamadas y seguimiento",
+      "ejemplo": "Prepárame 20 gestorías de Madrid para llamar esta semana"
+    },
+    "centro": {
+      "nombre": "Valeria",
+      "departamento": "Propuestas y Clientes",
+      "cargo": "Jefa de Propuestas y Clientes",
+      "ficha": "departamentos/propuestas/JEFE.md",
+      "mesas": [
+        "desk-5",
+        "desk-6",
+        "desk-7",
+        "desk-8"
+      ],
+      "color": "#f4a261",
+      "lema": "Diagnósticos, propuestas y presupuestos",
+      "ejemplo": "Prepara la propuesta para limpiacristales.es"
+    },
+    "derecha": {
+      "nombre": "Hugo",
+      "departamento": "Estrategia y Finanzas",
+      "cargo": "Jefe de Estrategia y Finanzas",
+      "ficha": "departamentos/estrategia/JEFE.md",
+      "mesas": [
+        "desk-9",
+        "desk-10",
+        "desk-11",
+        "desk-12"
+      ],
+      "color": "#264653",
+      "lema": "Precios, números y plan",
+      "ejemplo": "¿Cuánto deberíamos cobrar por una automatización de facturas?"
+    }
+  }
+}

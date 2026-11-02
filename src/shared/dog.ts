@@ -60,15 +60,16 @@ export const DOG_COATS: [string, string, string][] = [
   ['#a4acb6', '#f4f6f8', '#6f7884'], // grey
   ['#cf6a45', '#fbe1d2', '#9c4527'], // red
   ['#ffffff', '#ffffff', '#f3e9e2'], // white
+  ['#26262e', '#3a3a45', '#141418'], // black (Lexia)
 ];
 /** What ⚙️ Settings calls each coat, in DOG_COATS's order. */
-export const DOG_COAT_NAMES = ['Golden', 'Black and white', 'Chocolate', 'Cream', 'Grey', 'Red', 'White'];
+export const DOG_COAT_NAMES = ['Golden', 'Black and white', 'Chocolate', 'Cream', 'Grey', 'Red', 'White', 'Black'];
 
 /**
  * How much of its own colour each coat gives off, so a pale one stays pale in the office's warm light
  * and at dusk rather than going beige (the others are as the light makes them).
  */
-export const DOG_COAT_GLOW: readonly number[] = [0, 0, 0, 0, 0, 0, 0.42];
+export const DOG_COAT_GLOW: readonly number[] = [0, 0, 0, 0, 0, 0, 0.42, 0];
 
 /** How many coats a floor's dog is dealt from (see dogDefaults): the ones there were, so none changes colour when one is added. */
 const DEALT_COATS = 6;

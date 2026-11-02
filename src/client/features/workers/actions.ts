@@ -14,7 +14,7 @@ import type { CoreState } from '../../core/ctx';
 import { seatBuilt } from '../../core/floors';
 import { aside, key } from '../../core/hint';
 import type { Parts } from '../../core/parts';
-import { STATION_INFO } from '../../core/stations';
+import { stationLabel } from '../../core/stations';
 import { askNotifyPermission, notifyPermission } from '../../notify';
 import { repoChoices } from '../../shared/hiring';
 import { store } from '../../state';
@@ -181,8 +181,8 @@ export function installWorkerActions(ctx: Ctx, core: CoreState, parts: WorkerAct
     const kind = plan().byId.get(deskId)?.station;
     if (!kind) return;
     const w = store.workerAtDesk(deskId);
-    const name = STATION_AGENT[kind].name;
-    const info = STATION_INFO[kind];
+    const info = stationLabel(kind);
+    const name = info.name;
     // A prompt typed into a question it's asking would answer it.
     if (w?.status === 'needs_input') {
       toast(`The ${name} is waiting on an answer — here's its terminal`, 'warn');
@@ -198,7 +198,7 @@ export function installWorkerActions(ctx: Ctx, core: CoreState, parts: WorkerAct
           ? `The ${name} is busy. Your prompt waits in its input box until it's done.`
           : undefined;
     openPrompt({
-      title: `${info.icon} Ask the ${name}`,
+      title: name === STATION_AGENT[kind].name ? `${info.icon} Ask the ${name}` : `${info.icon} Pídele algo a ${name}`,
       subtitle,
       placeholder: `e.g. ${info.example}`,
       submitLabel: 'Send ✨',
@@ -414,14 +414,14 @@ export function installWorkerActions(ctx: Ctx, core: CoreState, parts: WorkerAct
     const kind = plan().byId.get(deskId)?.station;
     if (!kind) return { k: '', parts: [] };
     const w = store.workerAtDesk(deskId);
-    const info = STATION_INFO[kind];
+    const info = stationLabel(kind);
     if (!w) {
       const m = store.machine;
       const full = officeFull(m);
       return {
         k: `${full}|${m.workers}|${m.limit}`,
         parts: [
-          h('span.title', {}, `${info.icon} ${STATION_AGENT[kind].name}`),
+          h('span.title', {}, `${info.icon} ${info.name}`),
           aside(info.offer.replace(/^Ask me /, '')),
           full ? h('span.cost', {}, `🚫 Office full · ${m.workers} of ${m.limit} workers`) : key('E', 'Prompt'),
         ],

@@ -157,6 +157,8 @@ export class Dog {
   private coat = -1;
   private tag: THREE.Sprite | null = null;
   private tagName = '';
+  /** Lexia: how big the floor's dog is (see setSize). */
+  private size = 1;
   private bubble: { sprite: THREE.Sprite; kind: string; until: number } | null = null;
 
   private state: DogState | null = null;
@@ -455,6 +457,15 @@ export class Dog {
     for (const n of rig.nose) n.visible = theme !== 'christmas';
   }
 
+  /** Lexia: the floor's dog `s` times as big as it comes (its oficina.json's perro.tamano). */
+  setSize(s: number) {
+    if (s === this.size) return;
+    this.size = s;
+    this.body.scale.setScalar(s);
+    this.interactable.radius = 1.5 * Math.max(1, s);
+    if (this.tagName) this.setTag(this.tagName);
+  }
+
   private setTag(name: string) {
     this.tagName = name;
     if (this.tag) {
@@ -462,7 +473,7 @@ export class Dog {
       disposeSprite(this.tag);
     }
     this.tag = textSprite(`🐶 ${name}`, { bg: '#fffaf3', size: 30 });
-    this.tag.position.y = (this.rig?.top ?? PUP_TOP) + TAG_OVER;
+    this.tag.position.y = (this.rig?.top ?? PUP_TOP) * this.size + TAG_OVER;
     this.root.add(this.tag);
   }
 
@@ -521,7 +532,7 @@ export class Dog {
     if (this.rudolph) this.rudolph.emissiveIntensity = 0.7 + Math.sin(t * 3) * 0.3;
 
     // Bubbles: 💤 while it naps, gone when it's up.
-    const top = rig?.top ?? PUP_TOP;
+    const top = (rig?.top ?? PUP_TOP) * this.size;
     if (act === 'nap' && !this.bubble) this.say('nap', '💤', 1e9);
     if (this.bubble) {
       const b = this.bubble;

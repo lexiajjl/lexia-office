@@ -21,6 +21,7 @@ import { Jail } from './jail.js';
 import { Garage } from './garage.js';
 import { Jukebox } from './jukebox.js';
 import { Whiteboard } from './whiteboard.js';
+import { readLexia } from './lexia.js';
 import { MeetingRoom } from './meetings.js';
 import { Worktrees, type WorktreeCleanup } from './worktrees.js';
 import { landedWork, landedWorkers, type Landed } from './leave-on-merge.js';
@@ -391,6 +392,7 @@ export class Floor {
 
   info(): FloorInfo {
     const ws = this.workers.list();
+    const lexia = readLexia(this.dir);
     return {
       id: this.id,
       name: this.def.name,
@@ -405,6 +407,7 @@ export class Floor {
       waiting: ws.filter((w) => w.kind === 'agent' && (w.status === 'needs_input' || (w.status === 'done' && !w.acked))).length,
       people: this.ctx.people(this),
       wing: this.plan.wing,
+      ...(lexia ? { lexia } : {}),
     };
   }
 

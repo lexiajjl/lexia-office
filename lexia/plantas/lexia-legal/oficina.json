@@ -1,0 +1,50 @@
+{
+  "socio": "Jorge",
+  "jefes": {
+    "izquierda": {
+      "nombre": "Marisa",
+      "departamento": "Contratos y Clientes",
+      "cargo": "Jefa de Contratos y Clientes",
+      "ficha": "departamentos/contratos/JEFE.md",
+      "mesas": [
+        "desk-1",
+        "desk-2",
+        "desk-3",
+        "desk-4"
+      ],
+      "color": "#3a86ff",
+      "lema": "Contratos, NDAs y condiciones",
+      "ejemplo": "Revisa el contrato de mantenimiento y dime los 3 riesgos principales"
+    },
+    "centro": {
+      "nombre": "Bruno",
+      "departamento": "Protección de Datos y Cumplimiento",
+      "cargo": "Jefe de Protección de Datos y Cumplimiento",
+      "ficha": "departamentos/datos/JEFE.md",
+      "mesas": [
+        "desk-5",
+        "desk-6",
+        "desk-7",
+        "desk-8"
+      ],
+      "color": "#2a9d8f",
+      "lema": "RGPD, cookies y cumplimiento IA",
+      "ejemplo": "¿Qué nos falta para cumplir el RGPD con un cliente nuevo?"
+    },
+    "derecha": {
+      "nombre": "Elena",
+      "departamento": "Societario, Marca y Licencias",
+      "cargo": "Jefa de Societario, Marca y Licencias",
+      "ficha": "departamentos/societario/JEFE.md",
+      "mesas": [
+        "desk-9",
+        "desk-10",
+        "desk-11",
+        "desk-12"
+      ],
+      "color": "#8338ec",
+      "lema": "Socios, marca y licencias",
+      "ejemplo": "¿Qué licencia tiene n8n y qué implica para revenderlo?"
+    }
+  }
+}

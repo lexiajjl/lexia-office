@@ -7,6 +7,7 @@ import type { FloorPlan } from '../floorplan.js';
 import type { CarState } from '../garage.js';
 import type { BallState } from '../hoop.js';
 import type { JukeboxState } from '../jukebox.js';
+import type { LexiaFloor } from '../lexia.js';
 import type { WhiteboardView } from '../whiteboard.js';
 import type { AgentProvider } from './agents.js';
 import type { GhIssue, GhPull, GhState } from './github.js';
@@ -61,6 +62,8 @@ export interface FloorInfo {
   people: number;
   /** How many rows its back office is built out (see WING), for the building's outside. */
   wing: number;
+  /** Lexia: what the floor's oficina.json says (see shared/lexia.ts). */
+  lexia?: LexiaFloor;
 }
 
 /** How far a new floor's clone has got, from git's progress. */

@@ -1,0 +1,51 @@
+{
+  "socio": "Laura",
+  "estilo": "chica",
+  "jefes": {
+    "izquierda": {
+      "nombre": "Lola",
+      "departamento": "Procesos y Automatizaciones",
+      "cargo": "Jefa de Procesos y Automatizaciones",
+      "ficha": "departamentos/automatizaciones/JEFE.md",
+      "mesas": [
+        "desk-1",
+        "desk-2",
+        "desk-3",
+        "desk-4"
+      ],
+      "color": "#f72585",
+      "lema": "Automatizaciones, procesos y programación",
+      "ejemplo": "Diseña la automatización de facturas para una gestoría"
+    },
+    "centro": {
+      "nombre": "Coco",
+      "departamento": "Web",
+      "cargo": "Jefe de Web",
+      "ficha": "departamentos/web/JEFE.md",
+      "mesas": [
+        "desk-5",
+        "desk-6",
+        "desk-7",
+        "desk-8"
+      ],
+      "color": "#4cc9f0",
+      "lema": "La web de Lexia, rápida y bonita",
+      "ejemplo": "Revisa la web y proponme 2 mejoras"
+    },
+    "derecha": {
+      "nombre": "Luigi",
+      "departamento": "Laboratorio GitHub",
+      "cargo": "Jefe del Laboratorio GitHub",
+      "ficha": "departamentos/laboratorio/JEFE.md",
+      "mesas": [
+        "desk-9",
+        "desk-10",
+        "desk-11",
+        "desk-12"
+      ],
+      "color": "#b5179e",
+      "lema": "Herramientas open source que nos ahorran dinero",
+      "ejemplo": "Búscame alternativas open source a Calendly"
+    }
+  }
+}

@@ -11,7 +11,7 @@ import { store, type Topic } from '../../state';
 import { openBoard } from '../../ui/boards';
 import { inProgress } from '../../ui/github/progress';
 import type { BoardActions } from '../../ui/github/prompts';
-import { clip } from '../../ui/dom';
+import { clip, h, openModal } from '../../ui/dom';
 import { openIssue } from '../../ui/pull';
 import { openServices } from '../../ui/services';
 import { BoardTexture, QueueBoardTexture, ServicesBoardTexture } from './world';
@@ -26,6 +26,8 @@ declare module '../../world/types' {
     pulls: true;
     services: true;
     queue: true;
+    /** Lexia: the computer on the boss's desk upstairs, where the GitHub boards open. */
+    bossBoards: true;
   }
 }
 
@@ -131,6 +133,29 @@ export function installBoards(ctx: Ctx, deps: BoardsDeps) {
       return { k: String(n), parts: [hintTitle(`📋 Task queue${n ? ` · ${n}` : ''}`), key('E', 'Open')] };
     },
     use: onE(() => deps.showQueue()),
+  });
+  // Lexia: the computer on the boss's desk, now the board agents are heads of department: the issues,
+  // the pull requests and the task queue open from here.
+  ctx.interactions.define('bossBoards', {
+    reach: 3,
+    hint: () => boardHint('📋 Tablones de GitHub'),
+    use: onE(() => {
+      const pick = (label: string, run: () => void) => {
+        const b = h('button', {}, label);
+        b.addEventListener('click', () => {
+          modal.close();
+          run();
+        });
+        return b;
+      };
+      const box = h('div.lexia-boards', { style: 'display:flex;flex-direction:column;gap:10px;min-width:260px' },
+        h('h2', {}, '📋 Tablones de GitHub'),
+        pick('📌 Issues', () => openBoard('issues', ctx.net, deps.boardActions())),
+        pick('🔀 Pull requests', () => openBoard('pulls', ctx.net, deps.boardActions())),
+        pick('📋 Cola de tareas', () => deps.showQueue()),
+      );
+      const modal = openModal(box, { escCloses: true, backdropCloses: true, closeButton: true });
+    }),
   });
   // The machine monitor on the west wall.
   const machineTex = new MachineTexture();
