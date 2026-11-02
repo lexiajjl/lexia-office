@@ -8,6 +8,9 @@ import { mesh, textPlane, toon } from './toon';
 // the ladder up the west wall, and the fire poles. Every floor is built from the same office, so
 // what's here depends on which floor of the building you're on (see Stack.set).
 
+/** Lexia: whether the ladder and the fire poles go between the floors (off: only the elevator does). */
+const LEXIA_ENTRE_PLANTAS = false;
+
 /** The top of the windows either side of the ladder, where the sign to the floor above hangs over. */
 const LADDER_WINDOW_HEAD = Math.max(...WINDOWS.filter((w) => w.wall === 'west').map((w) => w.y1));
 
@@ -398,7 +401,8 @@ export function buildStack(colliders: Collider[], planks: THREE.Material): Stack
     if (s.up) state.up = s.up;
     if (s.down) state.down = s.down;
     const { index, count } = s;
-    const others = count > 1;
+    // Lexia: no ladder, hatches or fire poles between the floors: you take the elevator.
+    const others = LEXIA_ENTRE_PLANTAS && count > 1;
     const below = others && index > 0;
     const above = others && index < count - 1;
     // Every pole goes the whole way down: through this floor if there's one below, and the ceiling if there's one above.
@@ -541,8 +545,8 @@ export function buildStack(colliders: Collider[], planks: THREE.Material): Stack
     ceiling: ceilingMat,
     set,
     state,
-    poles: () => (state.count > 1 ? POLES : []),
-    polesGoDown: () => state.count > 1 && state.index > 0,
+    poles: () => (LEXIA_ENTRE_PLANTAS && state.count > 1 ? POLES : []),
+    polesGoDown: () => LEXIA_ENTRE_PLANTAS && state.count > 1 && state.index > 0,
     onHatch: null,
     update(dt, people, eye) {
       const inHatch = (p: { x: number; z: number }) => p.x > LADDER.hatch.minX - 0.1 && p.x < LADDER.hatch.maxX && p.z > LADDER.hatch.minZ - 0.1 && p.z < LADDER.hatch.maxZ + 0.1;

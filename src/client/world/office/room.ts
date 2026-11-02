@@ -56,6 +56,9 @@ export const nightLights: Fixture<'night'> = () => ({
 });
 
 /** Cork boards on the walls. */
+/** Lexia: the boards left off the wall. */
+const LEXIA_SIN_TABLONES = new Set<string>(['issues', 'pulls', 'queue']);
+
 export const boards: Fixture<'boardMeshes'> = (site) => {
   const boardMeshes = {} as Record<keyof typeof BOARDS, THREE.Mesh>;
   for (const key of Object.keys(BOARDS) as (keyof typeof BOARDS)[]) {
@@ -67,8 +70,11 @@ export const boards: Fixture<'boardMeshes'> = (site) => {
     const { group: bg, face } = wallBoard(b.width, b.height, key === 'queue' ? '#aab4be' : PALETTE.wood);
     bg.position.set(b.x + nx * 0.08, b.y, b.z + nz * 0.08);
     bg.rotation.y = b.rotY;
-    site.group.add(bg);
     boardMeshes[key] = face;
+    // Lexia: the issues, PR and queue boards aren't on the wall: they open from the computer in the
+    // boss office (see features/boards). Their faces are still drawn on, off the wall.
+    if (LEXIA_SIN_TABLONES.has(key)) continue;
+    site.group.add(bg);
     const label = textPlane(b.label, { bg: '#fffaf3', size: 64 });
     label.scale.multiplyScalar(1.3);
     label.position.set(b.x + nx * 0.04, b.y + b.height / 2 + 0.5, b.z + nz * 0.04);
